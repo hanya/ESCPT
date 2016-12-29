@@ -43,7 +43,7 @@ If you use development version of KiCAD, helper tool:
 https://gist.github.com/hanya/08591a20a6c76bf9215f8175bd46681b
 
 
-![ESCP Tool](https://raw.githubusercontent.com/hanya/ESCP_Tool/master/images/dialog.png "Dialog")
+![ESCP Tool](https://raw.githubusercontent.com/hanya/ESCPT/master/images/dialog.png "Dialog")
 
 * Settings: you can load and store your parameter settings.
 * Pad type: type of pad, choose this type to match with modules you have choosen.
@@ -69,13 +69,13 @@ If gap between pads or zones is thinner than zone minimum width, no copper is po
 ## Type A
 This type of pad contains set of pads with through hole and separated by the middle line of GND.
 
-![Type A](https://raw.githubusercontent.com/hanya/ESCP_Tool/master/images/a_params.png "Type A")
+![Type A](https://raw.githubusercontent.com/hanya/ESCPT/master/images/a_params.png "Type A")
 
 
 ## Type B
 No through hole on pads.
 
-![Type B](https://raw.githubusercontent.com/hanya/ESCP_Tool/master/images/b_params.png "Type B")
+![Type B](https://raw.githubusercontent.com/hanya/ESCPT/master/images/b_params.png "Type B")
 
 * Gap center width parameter is not used on this pad.
 
