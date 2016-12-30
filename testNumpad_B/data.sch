@@ -1008,8 +1008,8 @@ F 3 "" H 12450 4450 60  0000 C CNN
 $EndComp
 Text Notes 11050 6750 0    60   ~ 0
 MD\nHIGH: Normal Mode\nLOW: Boot Mode
-Text Notes 9400 9450 0    60   ~ 0
-todo, to reduce common terminal capacitance, \n4052 for COLs is better
+Text Notes 9350 9800 0    60   ~ 0
+Parasitic capacitance for Rx should be \nlower than 20p.\nMost 4051 multiplexier has large capacitance \non common pin. Therefore this configuration \nis not good.
 $Comp
 L MicroB J1
 U 1 1 585F4C65
@@ -1266,8 +1266,6 @@ F 3 "" H 1450 1250 60  0001 C CNN
 	1    1450 1250
 	1    0    0    -1  
 $EndComp
-Text Notes 9400 9800 0    60   ~ 0
-Total capacitance should be lower than 50p \nincluding the multiplexer.
 $Comp
 L PWR_FLAG #FLG042
 U 1 1 585E26CE
