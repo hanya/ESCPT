@@ -41,8 +41,7 @@ def insert_zone(board, netcode, layer=None, hatch_type=None, priority=0,
     area.SetZoneClearance(pcbnew.FromMM(clearance))
     area.SetMinThickness(pcbnew.FromMM(min_width))
     
-    outline = area.Outline()
-    outline.DeleteCorner(0) # remove first element
+    area.RemoveAllContours()
     return area
 
 
@@ -68,8 +67,7 @@ def insert_keepout_zone(board, layer=None, hatch_type=None,
     area.SetHatchStyle(hatch_type)
     area.SetPriority(priority)
     
-    outline = area.Outline()
-    outline.DeleteCorner(0) # remove first element
+    area.RemoveAllContours()
     return area
 
 
@@ -78,14 +76,14 @@ def close_zone(board, area):
         @param board Pcbnew board
         @param area zone
     """
-    area.Outline().CloseLastContour()
+    #area.Outline().CloseLastContour()
     area.BuildFilledSolidAreasPolygons(board)
 
 
-def add_arc_outline(outline, center_x, center_y, radius, start_angle, end_angle, 
+def add_arc_outline(area, center_x, center_y, radius, start_angle, end_angle, 
             corners=32, clockwise=True):
     """ Add arc to outline.
-        @param outline outline
+        @param area area
         @param center_x center x of this arc
         @param center_y center y of this arc
         @param radius radius of this arc
@@ -106,7 +104,7 @@ def add_arc_outline(outline, center_x, center_y, radius, start_angle, end_angle,
     for i in range(corners+1):
         x = int(floor(center_x + radius * cos(thi)))
         y = int(floor(center_y + radius * sin(thi)))
-        outline.AppendCorner(x, y)
+        area.AppendCorner(pcbnew.wxPoint(x, y), -1)
         thi += dthi
 
 
@@ -131,7 +129,6 @@ def insert_circular_keepout(board, center_x, center_y, radius, corners=16,
     
     area = insert_keepout_zone(board, layer, hatch_type, 
                         no_tracks, no_vias, no_pour, priority=0)
-    outline = area.Outline()
     
     cos, sin, floor = math.cos, math.sin, math.floor
     
@@ -142,7 +139,7 @@ def insert_circular_keepout(board, center_x, center_y, radius, corners=16,
     for i in range(corners):
         x = int(floor(center_x + radius * cos(thi)))
         y = int(floor(center_y + radius * sin(thi)))
-        outline.AppendCorner(x, y)
+        area.AppendCorner(pcbnew.wxPoint(x, y), -1)
         thi += dthi
     
     close_zone(board, area)
@@ -422,15 +419,8 @@ def add_back_keepout_A(pattern, corners, outer_radius, gap, no_tracks=True):
             # right
             area = insert_keepout_zone(board, layer, hatch_type, no_tracks=no_tracks, priority=1)
             outline = area.Outline()
-            add_arc_outline(outline, pos.x, pos.y, outer_r, 
+            add_arc_outline(area, pos.x, pos.y, outer_r, 
                         -outer_start_angle, outer_start_angle, corners=corners, clockwise=True)
-            
-            outline.InsertCorner(corners, pos.x + gap_corner_chamfer, 
-                                outline.GetY(corners) - gap_corner_chamfer)
-            outline.InsertCorner(0, pos.x + gap_corner_chamfer, 
-                                outline.GetY(0) + gap_corner_chamfer)
-            # swap corner between 0 and 1, no way to put corner at zero by insertion
-            swap_corner(outline, 0, 1)
             
             close_zone(board, area)
             if orientation != 0:
@@ -439,15 +429,9 @@ def add_back_keepout_A(pattern, corners, outer_radius, gap, no_tracks=True):
             # left
             area = insert_keepout_zone(board, layer, hatch_type, no_tracks=no_tracks, priority=1)
             outline = area.Outline()
-            add_arc_outline(outline, pos.x, pos.y, outer_r, 
+            add_arc_outline(area, pos.x, pos.y, outer_r, 
                         -outer_start_angle+180, outer_start_angle+180, corners=corners, clockwise=True)
-            # 
-            outline.InsertCorner(corners, pos.x - gap_corner_chamfer, 
-                                outline.GetY(corners) + gap_corner_chamfer)
-            outline.InsertCorner(0, pos.x - gap_corner_chamfer, 
-                                outline.GetY(0) - gap_corner_chamfer)
-            swap_corner(outline, 0, 1)
-            #print(area.GetNumCorners())
+            
             close_zone(board, area)
             if orientation != 0:
                 area.Rotate(pos, orientation)
@@ -494,17 +478,10 @@ def add_front_keepout(pattern, corners, outer_radius, inner_radius, gap):
             # right side
             area = insert_keepout_zone(board, layer, hatch_type, no_tracks=False, priority=1)
             outline = area.Outline()
-            add_arc_outline(outline, pos.x, pos.y, outer_r, 
+            add_arc_outline(area, pos.x, pos.y, outer_r, 
                         -outer_start_angle, outer_start_angle, corners=corners, clockwise=True)
-            add_arc_outline(outline, pos.x, pos.y, inner_r, 
+            add_arc_outline(area, pos.x, pos.y, inner_r, 
                         inner_start_angle, -inner_start_angle, corners=corners, clockwise=False)
-            # narrow corner, InsertCorner inserts corner after the index
-            outline.InsertCorner(corners, pos.x + gap_corner_chamfer, 
-                                outline.GetY(corners) - gap_corner_chamfer)
-            outline.InsertCorner(0, pos.x + gap_corner_chamfer, 
-                                outline.GetY(0) + gap_corner_chamfer)
-            # swap corner between 0 and 1, no way to put corner at zero by insertion
-            swap_corner(outline, 0, 1)
             
             close_zone(board, area)
             if orientation != 0:
@@ -513,16 +490,10 @@ def add_front_keepout(pattern, corners, outer_radius, inner_radius, gap):
             # left side
             area = insert_keepout_zone(board, layer, hatch_type, no_tracks=False, priority=1)
             outline = area.Outline()
-            add_arc_outline(outline, pos.x, pos.y, outer_r, 
+            add_arc_outline(area, pos.x, pos.y, outer_r, 
                         -outer_start_angle+180, outer_start_angle+180, corners=corners, clockwise=True)
-            add_arc_outline(outline, pos.x, pos.y, inner_r, 
+            add_arc_outline(area, pos.x, pos.y, inner_r, 
                         inner_start_angle+180, -inner_start_angle+180, corners=corners, clockwise=False)
-            # 
-            outline.InsertCorner(corners, pos.x - gap_corner_chamfer, 
-                                outline.GetY(corners) + gap_corner_chamfer)
-            outline.InsertCorner(0, pos.x - gap_corner_chamfer, 
-                                outline.GetY(0) - gap_corner_chamfer)
-            swap_corner(outline, 0, 1)
             
             close_zone(board, area)
             if orientation != 0:
@@ -581,9 +552,9 @@ def add_front_zone_pads(pattern, corners, outer_radius, inner_radius, gap,
                     # left pad
                     area = insert_zone(board, pad.GetNetCode(), layer, hatch_type, priority=1,  
                                         clearance=zone_clearance, min_width=zone_min_width)
-                    add_arc_outline(area.Outline(), pos.x, pos.y, outer_r, 
+                    add_arc_outline(area, pos.x, pos.y, outer_r, 
                         -outer_start_angle+180, outer_start_angle+180, corners=corners, clockwise=True)
-                    add_arc_outline(area.Outline(), pos.x, pos.y, inner_r, 
+                    add_arc_outline(area, pos.x, pos.y, inner_r, 
                                 inner_start_angle+180, -inner_start_angle+180, corners=corners, clockwise=False)
                     close_zone(board, area)
                     if orientation != 0:
@@ -593,9 +564,9 @@ def add_front_zone_pads(pattern, corners, outer_radius, inner_radius, gap,
                     # right pad
                     area = insert_zone(board, pad.GetNetCode(), layer, hatch_type, priority=1,  
                                         clearance=zone_clearance, min_width=zone_min_width)
-                    add_arc_outline(area.Outline(), pos.x, pos.y, outer_r, 
+                    add_arc_outline(area, pos.x, pos.y, outer_r, 
                         -outer_start_angle, outer_start_angle, corners=corners, clockwise=True)
-                    add_arc_outline(area.Outline(), pos.x, pos.y, inner_r, 
+                    add_arc_outline(area, pos.x, pos.y, inner_r, 
                                 inner_start_angle, -inner_start_angle, corners=corners, clockwise=False)
                     close_zone(board, area)
                     if orientation != 0:
@@ -651,9 +622,9 @@ def add_front_zone_pad_D(pattern, corners, outer_radius, inner_radius, gap,
                     # left pad
                     area = insert_zone(board, pad.GetNetCode(), layer, hatch_type, priority=1,  
                                         clearance=zone_clearance, min_width=zone_min_width)
-                    add_arc_outline(area.Outline(), pos.x, pos.y, outer_r, 
+                    add_arc_outline(area, pos.x, pos.y, outer_r, 
                         -outer_start_angle-180, outer_start_angle, corners=corners, clockwise=True)
-                    add_arc_outline(area.Outline(), pos.x, pos.y, inner_r, 
+                    add_arc_outline(area, pos.x, pos.y, inner_r, 
                         inner_start_angle, -inner_start_angle-180, corners=corners, clockwise=False)
                     close_zone(board, area)
                     if orientation != 0:
@@ -701,7 +672,6 @@ class Model:
             add_front_zone_pads(s.pattern, corners=s.corners, outer_radius=s.pad_radius, 
                     inner_radius=s.gap_center_radius, gap=s.gap_width,
                     zone_clearance=s.zone_clearance, zone_min_width=s.zone_min_width)
-    
     def remove_zone_pads(self):
         s = self.settings
         # todo, no need to specify layer, should be the same with the modules
@@ -721,7 +691,7 @@ class Model:
         if s.pad_type == "D":
             pass
         else:
-            remove_front_keepout(s.pattern, corners=s.corners*2+2+2)
+            remove_front_keepout(s.pattern, corners=s.corners*2+2)
     
     def add_back_keepout(self):
         s = self.settings
@@ -736,17 +706,15 @@ class Model:
         s = self.settings
         corners = s.corners
         if s.pad_type in ("A", "C"):
-            corners = corners + 1 + 2
+            corners = corners + 1
         remove_back_keepout(s.pattern, corners=corners)
     
     def add_all(self):
-        self.add_gnd_track()
         self.add_zone_pads()
         self.add_front_keepout()
         self.add_back_keepout()
     
     def remove_all(self):
-        self.remove_gnd_track()
         self.remove_zone_pads()
         self.remove_front_keepout()
         self.remove_back_keepout()
@@ -841,8 +809,6 @@ class ESCPToolDialog(wx.Dialog):
             self.commands[id] = method
         
         for title, add_id, add_method, remove_id, remove_method in (
-                    (u"GND tracks", self.ADD_GND_TRACK, "add_gnd_track",
-                                    self.REMOVE_GND_TRACK, "remove_gnd_track"),
                     (u"Zone pads", self.ADD_ZONE_PADS, "add_zone_pads", 
                                   self.REMOVE_ZONE_PADS, "remove_zone_pads"),
                     (u"Front keepout", self.ADD_FRONT_KEEPOUT, "add_front_keepout", 
@@ -959,10 +925,10 @@ DEFAULT_SETTINGS = {
     "pattern": "SW\d*",
     "outer_radius": 6.5,
     "pad_radius": 5.5,
-    "gap_width": 0.4,
+    "gap_width": 0.6,
     #"gap_width": 1.8, # D with 0.254 mm trace
-    "gap_center_width": 0.25, # for A
-    "gap_center_radius": 1.25,
+    "gap_center_width": 0.6, # for A
+    "gap_center_radius": 2.25,
     #"gap_center_radius": 2.8, # D
     "corners": 64,
     "zone_clearance": 0.2,
